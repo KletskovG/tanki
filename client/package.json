@@ -1,0 +1,27 @@
+{
+  "name": "tanki-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "npm run build:assets && vite",
+    "typechecking": "tsc --noEmit",
+    "setup:as3": "node tools/setup-as3.mjs",
+    "build:game": "node tools/build-game.mjs",
+    "build:assets": "node tools/copy-ruffle.mjs && npm run build:game",
+    "build": "npm run build:assets && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ruffle-rs/ruffle": "0.7.1"
+  },
+  "devDependencies": {
+    "@apache-royale/royale-js": "0.9.12",
+    "@types/node": "24.0.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.6"
+  }
+}

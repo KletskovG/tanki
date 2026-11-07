@@ -1,0 +1,28 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #e2e8f0;
+  background: #0f172a;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+#game {
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  background: #0f172a;
+}
+
+#game > ruffle-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
