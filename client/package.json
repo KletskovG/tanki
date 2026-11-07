@@ -7,7 +7,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "npm run build:assets && vite",
+    "dev": "npm run build:assets && npm run build:game && vite build && vite preview",
     "typechecking": "tsc --noEmit",
     "setup:as3": "node tools/setup-as3.mjs",
     "build:game": "node tools/build-game.mjs",

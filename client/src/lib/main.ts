@@ -1,3 +1,5 @@
+import {api} from './api';
+
 async function startGame(): Promise<void> {
   const gameContainer = document.querySelector("#game");
   const statusElement = document.querySelector("#status");
@@ -35,3 +37,5 @@ async function startGame(): Promise<void> {
 }
 
 startGame();
+console.log("API?")
+api()
