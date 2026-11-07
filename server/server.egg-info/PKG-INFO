@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: server
+Version: 0.1.0
+Summary: Add your description here
+Author-email: Kletskov <gfgfddgleb@gmail.com>
+Requires-Python: >=3.9.6
+Requires-Dist: fastapi>=0.128.8
+Requires-Dist: uvicorn[standard]>=0.39.0
