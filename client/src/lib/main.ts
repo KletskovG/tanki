@@ -1,6 +1,7 @@
 // TODO: Eslint
 
 import {TankiAPI} from './api';
+import { initializeLobby } from './lobby';
 
 async function startGame(): Promise<void> {
   const gameContainer = document.querySelector<HTMLDivElement>("#game");
@@ -109,12 +110,5 @@ function releaseKeys(ruffleAPI: RufflePlayerApi, held: Set<string>): void {
   held.clear();
 }
 
+initializeLobby(new TankiAPI());
 startGame();
-console.log("API?")
-
-const api = new TankiAPI();
-api.newGame()
-  .then(console.log)
-  .then(() => {
-    api.clearGames();
-  })

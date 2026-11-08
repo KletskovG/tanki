@@ -7,11 +7,31 @@
     <link rel="stylesheet" href="./index.css" />
   </head>
   <body>
-    <main>
-      <h1>Tanki</h1>
-      <p id="status" role="status">Loading game…</p>
-      <div id="game" aria-label="Tanki game"></div>
-    </main>
+    <header class="site-header">
+      <a class="brand" href="/">Tanki</a>
+      <nav class="header-controls" aria-label="Game controls">
+        <button id="new-game" class="primary-button" type="button">New game</button>
+        <button id="clear-games" type="button">Clear games list</button>
+      </nav>
+      <p id="lobby-message" class="lobby-message" role="status"></p>
+    </header>
+
+    <div class="app-layout">
+      <aside class="games-sidebar" aria-labelledby="games-heading">
+        <h2 id="games-heading">Games</h2>
+        <p id="games-status" class="muted" role="status">Loading games…</p>
+        <ul id="games-list" class="games-list" aria-label="Available games"></ul>
+      </aside>
+
+      <main class="game-panel">
+        <div class="game-heading">
+          <h1>Game map</h1>
+          <p id="selected-game" class="muted" role="status">Local game</p>
+        </div>
+        <p id="status" class="muted" role="status">Loading game…</p>
+        <div id="game" aria-label="Tanki game"></div>
+      </main>
+    </div>
     <script src="/ruffle.js"></script>
     <script type="module" src="./lib/main.ts"></script>
   </body>

@@ -12,12 +12,7 @@ def clear():
 
 @router.get('/games')
 def games():
-    return Response(
-        status_code=status.HTTP_200_OK,
-        content=dict(
-           keys=str(Game.game_storage.keys())
-        )
-    )
+    return list(Game.game_storage.keys())
 
 @router.get('/new')
 def new():
