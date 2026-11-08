@@ -3,7 +3,7 @@
 import {TankiAPI} from './api';
 
 async function startGame(): Promise<void> {
-  const gameContainer = document.querySelector("#game");
+  const gameContainer = document.querySelector<HTMLDivElement>("#game");
   const statusElement = document.querySelector("#status");
 
   if (!gameContainer || !statusElement) {
@@ -21,6 +21,13 @@ async function startGame(): Promise<void> {
     gameContainer.replaceChildren(player);
 
     const ruffleAPI = player.ruffle();
+
+    player.addEventListener("loadedmetadata", () => {
+      const metadata = ruffleAPI.metadata;
+      if (metadata && metadata.width > 0 && metadata.height > 0) {
+        gameContainer.style.aspectRatio = `${metadata.width} / ${metadata.height}`;
+      }
+    });
     
     const controls = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
     const held = new Set<string>();

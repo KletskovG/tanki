@@ -2,6 +2,7 @@ package {
     import flash.display.Bitmap;
     import flash.display.Sprite;
     import flash.events.Event;
+    import flash.geom.Rectangle;
 
     public class TankSprite extends Sprite {
         [Embed(source="../assets/tank_green.png")]
@@ -21,36 +22,44 @@ package {
             addChild(image);
         }
 
-        public function handleUpdate(event: Event, keys: Object, tank: TankSprite) {
+        public function handleUpdate(event: Event, keys: Object, world: GameWorld): void {
             var dx: int = 0;
             var dy: int = 0;
 
             if (keys["KeyW"]) {
-                if (tank.y - tankSpeed < 0) {
-                    return;
-                }
-
-                tank.y -= tankSpeed;
                 dy -= 1;
             } else if (keys["KeyS"]) {
-                if (tank.y + tankSpeed > 1200) {
-                    return;
-                }
-                tank.y += tankSpeed;
                 dy += 1;
             } else if (keys["KeyA"]) {
-                tank.x -= tankSpeed;
                 dx -= 1;
             } else if (keys["KeyD"]) {
-                tank.x += tankSpeed;
                 dx += 1;
             }
 
-             if (dx == 0 && dy == 0) {
+            if (dx == 0 && dy == 0) {
                 return;
-             };
+            }
 
-            tank.rotation = (Math.atan2(dy, dx) * 180 / Math.PI + 90) + 180;
+            var previousRotation:Number = rotation;
+            rotation = (Math.atan2(dy, dx) * 180 / Math.PI + 90) + 180;
+
+            var nextBounds:Rectangle = getBounds(parent);
+            nextBounds.offset(dx * tankSpeed, dy * tankSpeed);
+
+            if (!world.bounds.containsRect(nextBounds)) {
+                rotation = previousRotation;
+                return;
+            }
+
+            for each (var wall: WallSprite in world.walls) {
+                if (nextBounds.intersects(wall.getBounds(parent))) {
+                    rotation = previousRotation;
+                    return;
+                }
+            }
+
+            x += dx * tankSpeed;
+            y += dy * tankSpeed;
         }
     }
 }

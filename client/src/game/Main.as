@@ -8,8 +8,12 @@ package {
         private var tankGreen: TankSprite;
         private var tankRed: TankSprite;
         private var keys: Object = {};
+        private var world:GameWorld;
 
         public function Main() {
+            world = new GameWorld(960, 1200);
+            addChild(new Walls(world));
+
             tankGreen = new TankSprite("green");
             tankRed = new TankSprite("red");
             
@@ -20,6 +24,7 @@ package {
 
             addChild(tankGreen);
             addChild(tankRed);
+            world.tanks.push(tankGreen, tankRed);
 
             addEventListener(Event.ENTER_FRAME, update);
 
@@ -34,7 +39,7 @@ package {
         }
 
         private function update(event: Event): void {
-            tankGreen.handleUpdate(event, keys, tankGreen);
+            tankGreen.handleUpdate(event, keys, world);
         }
     }
 }
