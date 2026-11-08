@@ -3,7 +3,16 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   root: fileURLToPath(new URL("./src", import.meta.url)),
-  base: "./",
+  base: "/",
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8000",
+        ws: true,
+        rewrite: (path) => path.replace(/^\/api(?=\/|$)/, ""),
+      },
+    },
+  },
   publicDir: fileURLToPath(new URL("./.generated/public", import.meta.url)),
   build: {
     outDir: fileURLToPath(new URL("./dist", import.meta.url)),

@@ -24,7 +24,7 @@ interface Window {
   RufflePlayer?: {
     newest(): {
       createPlayer(): RufflePlayerElement;
-    };
+    } | null;
   };
   onTankiReady: VoidFunction;
   onTankiGameOver: VoidFunction;

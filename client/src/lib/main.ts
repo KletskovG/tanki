@@ -1,6 +1,6 @@
 import { TankiAPI } from "./api";
 import { CONTROLS } from "./const";
-import { initializeLobby } from "./lobby";
+import { Lobby } from "./lobby";
 
 export class Tanki {
 
@@ -17,6 +17,7 @@ export class Tanki {
     private generation = 0;
     private selectedId: string | null = null;
     private socket: WebSocket | null = null;
+    private preloadQueue: Promise<void> = Promise.resolve();
     
     private get gameContainer() {
         const element = document.querySelector<HTMLDivElement>("#game");
@@ -57,11 +58,11 @@ export class Tanki {
     }
 
     private startIfReady() {
-        if (!this.loaded || !this.paired || !this.ended) {
+        if (!this.loaded || !this.paired || this.ended) {
             return;
         }
 
-        this.gameContainer.hidden = true;
+        this.gameContainer.hidden = false;
         this.runtime?.resume();
         if (!this.bootstrapReady) {
             return;
@@ -76,22 +77,19 @@ export class Tanki {
         this.statusElement.textContent = "Two players connected. Game started.";
     }
 
-    private async preload(token: number, swf: Promise<ArrayBuffer>) {
+    private preload(token: number, swf: Promise<ArrayBuffer>) {
         this.loaded = false;
         this.bootstrapReady = false;
         this.started = false;
         this.ended = false;
 
-        const data = await swf;
+        this.preloadQueue = this.preloadQueue.then(async () => {
+            const data = await swf;
+            if (token !== this.generation || !this.runtime) {
+                return;
+            }
 
-        if (token !== this.generation) {
-            return;
-        }
-
-        this.bootstrapReady = false;
-
-
-        if (this.runtime) {
+            this.bootstrapReady = false;
             await this.runtime.load({
                 data,
                 swfFileName: "game.swf",
@@ -100,22 +98,28 @@ export class Tanki {
                 backgroundColor: "#0f172a",
                 allowScriptAccess: true,
             });
-        }
 
-        if (token !== this.generation) {
-            return;
-        }
+            if (token !== this.generation) {
+                return;
+            }
 
-        if (this.runtime) {
             this.runtime.traceObserver = (message) => console.log(`[AS3] ${message}`);
-        }
-        this.loaded = true;
+            this.loaded = true;
 
-        if (this.paired) {
-            this.startIfReady();
-        } else if (!this.selectedId) {
-            this.statusElement.textContent = "Select a game or create one to join.";
-        }
+            if (this.paired) {
+                this.startIfReady();
+            } else if (!this.selectedId) {
+                this.statusElement.textContent = "Select a game or create one to join.";
+            }
+        }).catch((error: unknown) => {
+            if (token !== this.generation) {
+                return;
+            }
+            this.loaded = false;
+            this.pauseGame();
+            this.statusElement.textContent = "Unable to load the game. Reload the page to try again.";
+            console.error("Game preload failed:", error);
+        });
     }
 
     private selectGame(id: string | null, swf: Promise<ArrayBuffer>) {
@@ -222,12 +226,17 @@ export class Tanki {
 
     public initializePage() {
         if (!this.player) {
+            this.statusElement.textContent = "Ruffle did not load. Reload the page to try again.";
+            const lobby = new Lobby(this.api, () => {
+                this.statusElement.textContent = "Ruffle did not load. Reload the page to try again.";
+            });
+            lobby.initializePage();
             return;
         }
         
         this.gameContainer.replaceChildren(this.player);
 
-        const swf = fetch(new URL("./game.swf", document.baseURI)).then((response) => {
+        const swf = fetch(new URL("/game.swf", document.baseURI)).then((response) => {
             if (!response.ok) {
                 throw new Error(`SWF download failed (${response.status}).`);
             }
@@ -236,7 +245,7 @@ export class Tanki {
 
         window.onTankiReady = () => {
             this.bootstrapReady = true;
-            queueMicrotask(this.startIfReady);
+            queueMicrotask(() => this.startIfReady());
         }
         window.onTankiGameOver = () => {
             this.ended = true;
@@ -258,6 +267,13 @@ export class Tanki {
 
         window.addEventListener("keydown", (event) => this.handleKey(event, true), true);
         window.addEventListener("keyup", (event) => this.handleKey(event, false), true);
+        this.player.addEventListener("focusout", () => this.releaseKeys());
+        window.addEventListener("blur", () => this.releaseKeys());
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                this.releaseKeys();
+            }
+        });
 
         window.addEventListener("pagehide", () => {
             const previous = this.socket;
@@ -265,8 +281,8 @@ export class Tanki {
             previous?.close();
         });
 
-        this.preload(this.generation, swf);
-        initializeLobby(this.api, this.selectGame, swf);
+        const lobby = new Lobby(this.api, (id) => this.selectGame(id, swf));
+        lobby.initializePage();
     }
 }
 

@@ -1,187 +1,200 @@
 import { TankiAPI } from "./api";
 
-export function initializeLobby(
-  api: TankiAPI,
-  onSelect: (id: string | null, swf: Promise<ArrayBuffer>) => void,
-  swf: Promise<ArrayBuffer>
-): void {
-  const list = document.querySelector<HTMLUListElement>("#games-list");
-  const status = document.querySelector<HTMLParagraphElement>("#games-status");
-  const message = document.querySelector<HTMLParagraphElement>("#lobby-message");
-  const selected = document.querySelector<HTMLParagraphElement>("#selected-game");
-  const newButton = document.querySelector<HTMLButtonElement>("#new-game");
-  const clearButton = document.querySelector<HTMLButtonElement>("#clear-games");
+export class Lobby {
 
-  let lastList = "";
-  let refreshing = false;
-  let refreshQueued = false;
-  let mutating = false;
-  let revision = 0;
-  let lastSelection: string | null | undefined;
+    private list = document.querySelector<HTMLUListElement>("#games-list");
+    private statusElement = document.querySelector<HTMLParagraphElement>("#games-status");
+    private messageElement = document.querySelector<HTMLParagraphElement>("#lobby-message");
+    private selectedElement = document.querySelector<HTMLParagraphElement>("#selected-game");
+    private newButton = document.querySelector<HTMLButtonElement>("#new-game");
+    private clearButton = document.querySelector<HTMLButtonElement>("#clear-games");
+    private lastList = "";
+    private refreshing = false;
+    private refreshQueued = false;
+    private mutating = false;
+    private revision = 0;
+    private lastSelection: string | null | undefined;
 
-  function updateSelection(reconnect = false): void {
-    const match = /^\/game\/([^/]+)\/?$/.exec(window.location.pathname);
-    let id: string | null = null;
-    
-    try {
-      if (match?.[1]) id = decodeURIComponent(match[1]);
-    } catch {}
-    
-    if (selected) {
-      selected.textContent = id ? `Game ${id}` : "No game selected";
-    }
+    constructor(
+        private api: TankiAPI,
+        private onSelect: (id: string | null) => void,
+    ) {}
 
-    if (reconnect || id !== lastSelection) {
-      lastSelection = id;
-      onSelect(id, swf);
-    }
+    private updateSelection(reconnect = false) {
+        const match = /^\/game\/([^/]+)\/?$/.exec(window.location.pathname);
+        let id: string | null = null;
 
-    const links = list?.querySelectorAll<HTMLAnchorElement>("a");
+        try {
+            if (match?.[1]) {
+                id = decodeURIComponent(match[1]);
+            }
+        } catch {}
 
-    if (!links || links?.length === 0) {
-      return;
-    }
+        if (this.selectedElement) {
+            this.selectedElement.textContent = id ? `Game ${id}` : "No game selected";
+        }
 
-    for (const link of links) {
-      if (link.dataset["gameId"] === id) {
-        link.setAttribute("aria-current", "page");
-        continue;
-      }
+        if (reconnect || id !== this.lastSelection) {
+            this.lastSelection = id;
+            this.onSelect(id);
+        }
 
-      link.removeAttribute("aria-current");
-    }
-  }
+        const links = this.list?.querySelectorAll<HTMLAnchorElement>("a");
 
-  function renderGames(ids: string[]): void {
-    const signature = JSON.stringify(ids);
-    
-    if (signature !== lastList && list) {
-      lastList = signature;
-      list.replaceChildren(...ids.map((id) => {
-        const item = document.createElement("li");
-        const link = document.createElement("a");
-        link.href = `/game/${encodeURIComponent(id)}`;
-        link.textContent = id;
-        link.dataset["gameId"] = id;
-        item.append(link);
-        return item;
-      }));
-      updateSelection();
-    }
-    
-    const text = ids.length ? `${ids.length} ${ids.length === 1 ? "game" : "games"} available` : "No active games";
-    
-    if (status && status.textContent !== text) {
-      status.textContent = text;
-    }
-  }
+        if (!links || links.length === 0) {
+            return;
+        }
 
-  async function refreshGames(): Promise<void> {
-    if (mutating) {
-      return;
-    };
-    
-    if (refreshing) {
-      refreshQueued = true;
-      return;
-    }
-    
-    refreshing = true;
-    const requestRevision = revision;
-    
-    try {
-      const ids = await api.getGames();
-      
-      if (requestRevision === revision) {
-        renderGames(ids);
-      }
-    } catch (error: unknown) {
-      if (requestRevision === revision && status) {
-        status.textContent = "Unable to refresh games. Retrying…";
-        console.error("Failed to refresh games:", error);
-      }
-    } finally {
-      refreshing = false;
-      
-      if (refreshQueued) {
-        refreshQueued = false;
-        void refreshGames();
-      }
-    }
-  }
+        for (const link of links) {
+            if (link.dataset["gameId"] === id) {
+                link.setAttribute("aria-current", "page");
+                continue;
+            }
 
-  async function runAction(action: "new" | "clear"): Promise<void> {
-    if (mutating) {
-      return;
-    }
-    
-    mutating = true;
-    revision++;
-    
-    if (!newButton || !clearButton || !message) {
-      return;
+            link.removeAttribute("aria-current");
+        }
     }
 
-    newButton.disabled = clearButton.disabled = true;
-    message.dataset["error"] = "false";
-    message.textContent = action === "new" ? "Creating game…" : "Clearing games…";
+    private renderGames(ids: string[]) {
+        const signature = JSON.stringify(ids);
 
-    try {
-      if (action === "new") {
-        const id = await api.newGame();
-        message.textContent = `Created game ${id}.`;
-        window.history.pushState(null, "", `/game/${encodeURIComponent(id)}`);
-        updateSelection(true);
-      } else {
-        await api.clearGames();
-        renderGames([]);
-        message.textContent = "Games cleared.";
-        window.history.pushState(null, "", "/");
-        updateSelection(true);
-      }
-    } catch (error: unknown) {
-      message.dataset["error"] = "true";
-      message.textContent = action === "new" ? "Unable to create game. Please try again." : "Unable to clear games. Please try again.";
-      console.error("Lobby action failed:", error);
-    } finally {
-      mutating = false;
-      newButton.disabled = clearButton.disabled = false;
-      void refreshGames();
-    }
-  }
-  
-  if (!newButton || !clearButton || !list) {
-    return;
-  }
+        if (signature !== this.lastList && this.list) {
+            this.lastList = signature;
+            this.list.replaceChildren(...ids.map((id) => {
+                const item = document.createElement("li");
+                const link = document.createElement("a");
 
-  newButton.addEventListener("click", () => void runAction("new"));
-  clearButton.addEventListener("click", () => void runAction("clear"));
-  list.addEventListener("click", (event: MouseEvent) => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-       return;
+                // TODO: HTTP ENDPOINT
+                link.href = `/game/${encodeURIComponent(id)}`;
+                link.textContent = id;
+                link.dataset["gameId"] = id;
+                item.append(link);
+                return item;
+            }));
+            this.updateSelection();
+        }
+
+        const text = ids.length ? `${ids.length} ${ids.length === 1 ? "game" : "games"} available` : "No active games";
+
+        if (this.statusElement && this.statusElement.textContent !== text) {
+            this.statusElement.textContent = text;
+        }
     }
-    
-    const target = event.target;
-    if (!(target instanceof Element)) {
-      return;
+
+    private async refreshGames() {
+        if (this.mutating) {
+            return;
+        }
+
+        if (this.refreshing) {
+            this.refreshQueued = true;
+            return;
+        }
+
+        this.refreshing = true;
+        const requestRevision = this.revision;
+
+        try {
+            const ids = await this.api.getGames();
+
+            if (requestRevision === this.revision) {
+                this.renderGames(ids);
+            }
+        } catch (error: unknown) {
+            if (requestRevision === this.revision && this.statusElement) {
+                this.statusElement.textContent = "Unable to refresh games. Retrying…";
+                console.error("Failed to refresh games:", error);
+            }
+        } finally {
+            this.refreshing = false;
+
+            if (this.refreshQueued) {
+                this.refreshQueued = false;
+                void this.refreshGames();
+            }
+        }
     }
-    
-    const link = target.closest<HTMLAnchorElement>("a[data-game-id]");
-    
-    if (!link) {
-      return;
+
+    private async runAction(action: "new" | "clear") {
+        if (this.mutating) {
+            return;
+        }
+
+        this.mutating = true;
+        this.revision++;
+
+        if (!this.newButton || !this.clearButton || !this.messageElement) {
+            this.mutating = false;
+            return;
+        }
+
+        this.newButton.disabled = this.clearButton.disabled = true;
+        this.messageElement.dataset["error"] = "false";
+        this.messageElement.textContent = action === "new" ? "Creating game…" : "Clearing games…";
+
+        try {
+            if (action === "new") {
+                const id = await this.api.newGame();
+
+                this.messageElement.textContent = `Created game ${id}.`;
+                window.history.pushState(null, "", `/game/${encodeURIComponent(id)}`);
+                this.updateSelection(true);
+            } else {
+                await this.api.clearGames();
+                this.renderGames([]);
+                this.messageElement.textContent = "Games cleared.";
+                window.history.pushState(null, "", "/");
+                this.updateSelection(true);
+            }
+        } catch (error: unknown) {
+            this.messageElement.dataset["error"] = "true";
+            this.messageElement.textContent = action === "new" ? "Unable to create game. Please try again." : "Unable to clear games. Please try again.";
+            console.error("Lobby action failed:", error);
+        } finally {
+            this.mutating = false;
+            this.newButton.disabled = this.clearButton.disabled = false;
+            void this.refreshGames();
+        }
     }
-    
-    event.preventDefault();
-    
-    if (window.location.pathname !== link.pathname) {
-       window.history.pushState(null, "", link.pathname);
+
+    private handleGameClick(event: MouseEvent) {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        const target = event.target;
+
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const link = target.closest<HTMLAnchorElement>("a[data-game-id]");
+
+        if (!link) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (window.location.pathname !== link.pathname) {
+            window.history.pushState(null, "", link.pathname);
+        }
+
+        this.updateSelection(true);
     }
-    
-    updateSelection(true);
-  });
-  window.addEventListener("popstate", () => updateSelection());
-  updateSelection();
-  refreshGames();
-  window.setInterval(() => refreshGames(), 1000);
+
+    public initializePage() {
+        if (!this.newButton || !this.clearButton || !this.list) {
+            return;
+        }
+
+        this.newButton.addEventListener("click", () => void this.runAction("new"));
+        this.clearButton.addEventListener("click", () => void this.runAction("clear"));
+        this.list.addEventListener("click", (event) => this.handleGameClick(event));
+
+        window.addEventListener("popstate", () => this.updateSelection());
+        this.updateSelection();
+        void this.refreshGames();
+        window.setInterval(() => void this.refreshGames(), 1000);
+    }
 }
