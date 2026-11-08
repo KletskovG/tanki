@@ -1,4 +1,6 @@
-import {api} from './api';
+// TODO: Eslint
+
+import {TankiAPI} from './api';
 
 async function startGame(): Promise<void> {
   const gameContainer = document.querySelector("#game");
@@ -18,16 +20,18 @@ async function startGame(): Promise<void> {
     const player = ruffle.createPlayer();
     gameContainer.replaceChildren(player);
 
-    const api = player.ruffle();
-    await api.load({
+    const ruffleAPI = player.ruffle();
+    await ruffleAPI.load({
       url: new URL("./game.swf", document.baseURI).href,
       autoplay: "off",
       unmuteOverlay: "hidden",
       backgroundColor: "#0f172a",
     });
 
-    api.traceObserver = (message) => console.log(`[ActionScript 3] ${message}`);
-    api.resume();
+    ruffleAPI.traceObserver = (message) => console.log(`[ActionScript 3] ${message}`);
+    ruffleAPI.resume();
+
+    // player.onk
 
     statusElement.textContent = "Game loaded.";
   } catch (error: unknown) {
@@ -38,4 +42,10 @@ async function startGame(): Promise<void> {
 
 startGame();
 console.log("API?")
-api()
+
+const api = new TankiAPI();
+api.newGame()
+  .then(console.log)
+  .then(() => {
+    api.clearGames();
+  })
