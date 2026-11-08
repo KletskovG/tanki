@@ -1,6 +1,12 @@
 import { HTTP_ENDPOINT, API_URL } from "./const";
 
 export class TankiAPI {
+    public connectGame(id: string): WebSocket {
+        const url = new URL(`${API_URL}/game/${encodeURIComponent(id)}`);
+        url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+        return new WebSocket(url);
+    }
+
     private async request(endpoint: string): Promise<Response> {
         const response = await fetch(`${API_URL}/${endpoint}`, {
             cache: "no-store",

@@ -1,6 +1,6 @@
 import { TankiAPI } from "./api";
 
-export function initializeLobby(api: TankiAPI): void {
+export function initializeLobby(api: TankiAPI, onSelect: (id: string | null) => void): void {
   const list = document.querySelector<HTMLUListElement>("#games-list");
   const status = document.querySelector<HTMLParagraphElement>("#games-status");
   const message = document.querySelector<HTMLParagraphElement>("#lobby-message");
@@ -13,8 +13,9 @@ export function initializeLobby(api: TankiAPI): void {
   let refreshQueued = false;
   let mutating = false;
   let revision = 0;
+  let lastSelection: string | null | undefined;
 
-  function updateSelection(): void {
+  function updateSelection(reconnect = false): void {
     const match = /^\/game\/([^/]+)\/?$/.exec(window.location.pathname);
     let id: string | null = null;
     
@@ -23,7 +24,12 @@ export function initializeLobby(api: TankiAPI): void {
     } catch {}
     
     if (selected) {
-      selected.textContent = id ? `Game ${id}` : "Local game";
+      selected.textContent = id ? `Game ${id}` : "No game selected";
+    }
+
+    if (reconnect || id !== lastSelection) {
+      lastSelection = id;
+      onSelect(id);
     }
 
     const links = list?.querySelectorAll<HTMLAnchorElement>("a");
@@ -120,10 +126,14 @@ export function initializeLobby(api: TankiAPI): void {
       if (action === "new") {
         const id = await api.newGame();
         message.textContent = `Created game ${id}.`;
+        window.history.pushState(null, "", `/game/${encodeURIComponent(id)}`);
+        updateSelection(true);
       } else {
         await api.clearGames();
         renderGames([]);
         message.textContent = "Games cleared.";
+        window.history.pushState(null, "", "/");
+        updateSelection(true);
       }
     } catch (error: unknown) {
       message.dataset["error"] = "true";
@@ -164,9 +174,9 @@ export function initializeLobby(api: TankiAPI): void {
        window.history.pushState(null, "", link.pathname);
     }
     
-    updateSelection();
+    updateSelection(true);
   });
-  window.addEventListener("popstate", updateSelection);
+  window.addEventListener("popstate", () => updateSelection());
   updateSelection();
   refreshGames();
   window.setInterval(() => refreshGames(), 1000);

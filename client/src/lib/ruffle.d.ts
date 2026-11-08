@@ -4,14 +4,16 @@ interface RufflePlayerApi {
   readonly metadata: { width: number; height: number } | null;
   traceObserver: ((message: string) => void) | null;
   load(options: {
-    url: string;
+    data: ArrayBuffer;
+    swfFileName: string;
     autoplay: "off";
     unmuteOverlay: "hidden";
     backgroundColor: string;
     allowScriptAccess: boolean;
   }): Promise<void>;
   resume(): void;
-  callExternalInterface(eventName: string, eventCode: string, pressed: boolean): void;
+  suspend(): void;
+  callExternalInterface(name: string, ...args: unknown[]): unknown;
 }
 
 interface RufflePlayerElement extends HTMLElement {

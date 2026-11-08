@@ -11,6 +11,15 @@ package {
         private var world:GameWorld;
 
         public function Main() {
+            if (ExternalInterface.available) {
+                ExternalInterface.addCallback("setKeyState", setKeyState);
+                ExternalInterface.addCallback("startGame", startGame);
+                ExternalInterface.call("onTankiReady");
+            }
+        }
+
+        private function startGame():void {
+            if (world != null) return;
             world = new GameWorld(960, 800);
             addChild(new Walls(world));
 
@@ -27,15 +36,10 @@ package {
             world.tanks.push(tankGreen, tankRed);
 
             addEventListener(Event.ENTER_FRAME, update);
-
-            if (ExternalInterface.available) {
-                ExternalInterface.addCallback("setKeyState", setKeyState);
-                ExternalInterface.call("onTankiReady");
-            }
         }
 
         private function setKeyState(code: String, pressed: Boolean): void {
-            if (world.isStopped) {
+            if (world == null || world.isStopped) {
                 return;
             }
             
