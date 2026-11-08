@@ -12,6 +12,7 @@ package {
         private static const RedTank: Class;
 
         private var tankSpeed: int = 3;
+        private var fireHeld:Boolean = false;
 
         public function TankSprite(color: String) {
             var image: Bitmap = color == "red" ? new RedTank() as Bitmap : new GreenTank();
@@ -23,28 +24,58 @@ package {
         }
 
         public function handleUpdate(event: Event, keys: Object, world: GameWorld): void {
-            var dx: int = 0;
-            var dy: int = 0;
-
-            if (keys["KeyW"]) {
-                dy -= 1;
-            } else if (keys["KeyS"]) {
-                dy += 1;
-            } else if (keys["KeyA"]) {
-                dx -= 1;
-            } else if (keys["KeyD"]) {
-                dx += 1;
-            }
-
-            if (dx == 0 && dy == 0) {
+            if (world.isStopped || checkProjectileCollision(world)) {
                 return;
             }
 
-            var previousRotation:Number = rotation;
-            rotation = (Math.atan2(dy, dx) * 180 / Math.PI + 90) + 180;
+            var firePressed: Boolean = keys["Space"] === true;
+            var shouldFire: Boolean = firePressed && !fireHeld;
+            fireHeld = firePressed;
 
-            var nextBounds:Rectangle = getBounds(parent);
-            nextBounds.offset(dx * tankSpeed, dy * tankSpeed);
+            var directionX: int = 0;
+            var directionY: int = 0;
+
+            if (keys["KeyW"]) {
+                directionY -= 1;
+            } else if (keys["KeyS"]) {
+                directionY += 1;
+            } else if (keys["KeyA"]) {
+                directionX -= 1;
+            } else if (keys["KeyD"]) {
+                directionX += 1;
+            }
+
+            if (directionX != 0 || directionY != 0) {
+                move(directionX, directionY, world);
+            }
+
+            if (checkProjectileCollision(world)) {
+                return;
+            }
+            if (shouldFire) {
+                world.launchProjectile(this)
+            };
+        }
+
+        private function checkProjectileCollision(world: GameWorld): Boolean {
+            var tankBounds: Rectangle = getBounds(parent);
+            
+            for each (var projectile: ProjectileSprite in world.projectiles) {
+                if (projectile.owner != this && tankBounds.intersects(projectile.getBounds(parent))) {
+                    world.stop();
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        private function move(directionX: int, directionY: int, world: GameWorld): void {
+            var previousRotation: Number = rotation;
+            rotation = (Math.atan2(directionY, directionX) * 180 / Math.PI + 90) + 180;
+
+            var nextBounds: Rectangle = getBounds(parent);
+            nextBounds.offset(directionX * tankSpeed, directionY * tankSpeed);
 
             if (!world.bounds.containsRect(nextBounds)) {
                 rotation = previousRotation;
@@ -58,8 +89,8 @@ package {
                 }
             }
 
-            x += dx * tankSpeed;
-            y += dy * tankSpeed;
+            x += directionX * tankSpeed;
+            y += directionY * tankSpeed;
         }
     }
 }

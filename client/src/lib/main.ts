@@ -29,13 +29,18 @@ async function startGame(): Promise<void> {
       }
     });
     
-    const controls = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
+    const controls = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "Space"]);
     const held = new Set<string>();
     let ready = false;
 
     Object.assign(window, {
       onTankiReady(): void {
         ready = true;
+      },
+      onTankiGameOver(): void {
+        ready = false;
+        held.clear();
+        statusElement.textContent = "Game over — a tank was hit.";
       },
     });
 
@@ -44,11 +49,12 @@ async function startGame(): Promise<void> {
     window.addEventListener("keydown", (event) => handleKey(ready, player, event, true, controls, held, ruffleAPI), true);
     window.addEventListener("keyup", (event) => handleKey(ready, player, event, false, controls, held, ruffleAPI), true);
 
-    // player.addEventListener("focusout", releaseKeys);
-    // window.addEventListener("blur", releaseKeys);
-    // document.addEventListener("visibilitychange", () => {
-    //   if (document.hidden) releaseKeys();
-    // });
+    const resetKeys = (): void => releaseKeys(ruffleAPI, held);
+    player.addEventListener("focusout", resetKeys);
+    window.addEventListener("blur", resetKeys);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) resetKeys();
+    });
 
     await ruffleAPI.load({
       url: new URL("./game.swf", document.baseURI).href,
