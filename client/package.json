@@ -12,7 +12,7 @@
     "setup:as3": "node tools/setup-as3.mjs",
     "build:game": "node tools/build-game.mjs",
     "build:assets": "node tools/copy-ruffle.mjs && npm run build:game",
-    "build": "npm run build:assets && vite build",
+    "build": "npm run build:assets && npm run build:game && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

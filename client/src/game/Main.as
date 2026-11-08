@@ -6,7 +6,7 @@ package {
     [SWF(width="960", height="600", frameRate="60", backgroundColor="#0f172a")]
     public class Main extends Sprite {
         public function Main() {
-            trace("Tanki game started.");
+            trace("Tanki game started. Test");
 
             var label:TextField = new TextField();
             label.defaultTextFormat = new TextFormat("_sans", 24, 0xe2e8f0);

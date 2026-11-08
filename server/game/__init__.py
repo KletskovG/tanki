@@ -15,3 +15,4 @@ class Game:
         game_id = str(uuid.uuid4())
         # TODO: Create game instance
         Game.game_storage[game_id] = {}
+        return game_id
