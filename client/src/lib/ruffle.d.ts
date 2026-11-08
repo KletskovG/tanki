@@ -7,8 +7,10 @@ interface RufflePlayerApi {
     autoplay: "off";
     unmuteOverlay: "hidden";
     backgroundColor: string;
+    allowScriptAccess: boolean;
   }): Promise<void>;
   resume(): void;
+  callExternalInterface(eventName: string, eventCode: string, pressed: boolean): void;
 }
 
 interface RufflePlayerElement extends HTMLElement {
