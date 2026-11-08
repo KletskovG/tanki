@@ -35,7 +35,6 @@ async def connect_game(socket: WebSocket, game_id: str):
             message = await socket.receive()
             if message['type'] == 'websocket.disconnect':
                 break
-            # Gameplay messages and synchronization are intentionally not handled.
     except WebSocketDisconnect:
         pass
     finally:

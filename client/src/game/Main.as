@@ -18,8 +18,11 @@ package {
             }
         }
 
-        private function startGame():void {
-            if (world != null) return;
+        private function startGame(): void {
+            if (world != null) {
+                return;
+            }
+            
             world = new GameWorld(960, 800);
             addChild(new Walls(world));
 

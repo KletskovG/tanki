@@ -1,6 +1,10 @@
 import { TankiAPI } from "./api";
 
-export function initializeLobby(api: TankiAPI, onSelect: (id: string | null) => void): void {
+export function initializeLobby(
+  api: TankiAPI,
+  onSelect: (id: string | null, swf: Promise<ArrayBuffer>) => void,
+  swf: Promise<ArrayBuffer>
+): void {
   const list = document.querySelector<HTMLUListElement>("#games-list");
   const status = document.querySelector<HTMLParagraphElement>("#games-status");
   const message = document.querySelector<HTMLParagraphElement>("#lobby-message");
@@ -29,7 +33,7 @@ export function initializeLobby(api: TankiAPI, onSelect: (id: string | null) => 
 
     if (reconnect || id !== lastSelection) {
       lastSelection = id;
-      onSelect(id);
+      onSelect(id, swf);
     }
 
     const links = list?.querySelectorAll<HTMLAnchorElement>("a");

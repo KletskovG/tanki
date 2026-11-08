@@ -6,15 +6,12 @@ from game import Game
 
 
 class GameConnections:
-    """Tracks open sockets only; no simulation or gameplay messages."""
-
     def __init__(self):
         self.rooms: dict[str, set[WebSocket]] = {}
         self._lock = None
 
     @property
     def lock(self) -> asyncio.Lock:
-        # Python 3.9 binds locks to a loop at creation; imports run before Uvicorn's loop.
         if self._lock is None:
             self._lock = asyncio.Lock()
         return self._lock
@@ -42,7 +39,6 @@ class GameConnections:
             await self.notify(game_id)
 
     async def notify(self, game_id: str) -> None:
-        # Called under the lock so join/leave notifications stay in order.
         peers = self.rooms.get(game_id, set())
         while peers:
             failed = set()
