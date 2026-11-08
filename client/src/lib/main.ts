@@ -26,7 +26,6 @@ async function startGame(): Promise<void> {
     const held = new Set<string>();
     let ready = false;
 
-    // TODO: Refactor
     Object.assign(window, {
       onTankiReady(): void {
         ready = true;

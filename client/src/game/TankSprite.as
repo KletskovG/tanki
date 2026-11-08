@@ -22,22 +22,35 @@ package {
         }
 
         public function handleUpdate(event: Event, keys: Object, tank: TankSprite) {
+            var dx: int = 0;
+            var dy: int = 0;
+
             if (keys["KeyW"]) {
                 if (tank.y - tankSpeed < 0) {
                     return;
                 }
 
                 tank.y -= tankSpeed;
+                dy -= 1;
             } else if (keys["KeyS"]) {
                 if (tank.y + tankSpeed > 1200) {
                     return;
                 }
                 tank.y += tankSpeed;
+                dy += 1;
             } else if (keys["KeyA"]) {
                 tank.x -= tankSpeed;
+                dx -= 1;
             } else if (keys["KeyD"]) {
                 tank.x += tankSpeed;
+                dx += 1;
             }
+
+             if (dx == 0 && dy == 0) {
+                return;
+             };
+
+            tank.rotation = (Math.atan2(dy, dx) * 180 / Math.PI + 90) + 180;
         }
     }
 }
