@@ -1,10 +1,17 @@
 import uuid
 
+from game.state import GameWorldState, TankColor
+
 class Game:
-    game_storage = {}
+    TANK_COLORS = ("green", "red")
+    game_storage: dict[str, "Game"] = {}
 
     def __init__(self):
-        pass
+        self.tanks: dict[str, str] = {}
+        self.player_states: dict[TankColor, GameWorldState] = {}
+
+        for color in self.TANK_COLORS:
+            self.tanks[color] = str(uuid.uuid4())
 
     @staticmethod
     def clear():
@@ -13,6 +20,5 @@ class Game:
     @staticmethod
     def new_game():
         game_id = str(uuid.uuid4())
-        # TODO: Create game instance
-        Game.game_storage[game_id] = {}
+        Game.game_storage[game_id] = Game()
         return game_id

@@ -5,6 +5,9 @@ package {
     import flash.geom.Rectangle;
 
     public class TankSprite extends Sprite {
+        public var id: String;
+        public var color: String;
+
         [Embed(source="../assets/tank_green.png")]
         private static const GreenTank: Class;
 
@@ -14,13 +17,25 @@ package {
         private var tankSpeed: int = 3;
         private var fireHeld:Boolean = false;
 
-        public function TankSprite(color: String) {
+        public function TankSprite(_id: String, _color: String) {
+            id = _id;
+            color = _color;
             var image: Bitmap = color == "red" ? new RedTank() as Bitmap : new GreenTank();
 
             image.x = -image.width / 2;
             image.y = -image.height / 2;
 
             addChild(image);
+        }
+
+        public function toState(): Object {
+            return {
+                id: id,
+                color: color,
+                x: x,
+                y: y,
+                rotation: rotation
+            };
         }
 
         public function handleUpdate(event: Event, keys: Object, world: GameWorld): void {

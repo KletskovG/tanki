@@ -7,9 +7,25 @@ package {
         public const projectiles: Vector.<ProjectileSprite> = new Vector.<ProjectileSprite>();
         public var bounds: Rectangle;
         private var stopped: Boolean = false;
+        private var playerTank: TankSprite;
 
-        public function GameWorld(width:Number, height:Number) {
+        public function GameWorld(width: Number, height: Number, color: String, greenTankId: String, redTankId: String) {
             bounds = new Rectangle(0, 0, width, height);
+
+            var tankGreen: TankSprite = new TankSprite(greenTankId, "green");
+            var tankRed: TankSprite = new TankSprite(redTankId, "red");
+
+            tankGreen.x = 480;
+            tankGreen.y = 100;
+            tankRed.x = 480;
+            tankRed.y = 700;
+
+            tanks.push(tankGreen, tankRed);
+            playerTank = color == "red" ? tankRed : tankGreen;
+        }
+
+        public function get controlledTank(): TankSprite {
+            return playerTank;
         }
 
         public function get isStopped(): Boolean {
@@ -18,6 +34,35 @@ package {
 
         public function stop(): void {
             stopped = true;
+        }
+
+        public function toState(): Object {
+            var tankStates: Array = [];
+            var wallStates: Array = [];
+            var projectileStates: Array = [];
+
+            for each (var tank: TankSprite in tanks) {
+                tankStates.push(tank.toState());
+            }
+            for each (var wall: WallSprite in walls) {
+                wallStates.push(wall.toState());
+            }
+            for each (var projectile: ProjectileSprite in projectiles) {
+                projectileStates.push(projectile.toState());
+            }
+
+            return {
+                bounds: {
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height
+                },
+                tanks: tankStates,
+                walls: wallStates,
+                projectiles: projectileStates,
+                stopped: stopped
+            };
         }
 
         public function launchProjectile(tank: TankSprite): ProjectileSprite {

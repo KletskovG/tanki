@@ -3,6 +3,8 @@ package {
     import flash.display.Sprite;
 
     public class ProjectileSprite extends Sprite {
+        public var parentId: String;
+
         [Embed(source="../assets/rocket.png")]
         private static const RocketImage: Class;
 
@@ -15,6 +17,7 @@ package {
             var length: int = Math.sqrt(directionX * directionX + directionY * directionY);
 
             _owner = owner;
+            parentId = owner.id;
             _directionX = directionX / length;
             _directionY = directionY / length;
 
@@ -36,6 +39,17 @@ package {
 
         public function get directionY(): int {
             return _directionY;
+        }
+
+        public function toState(): Object {
+            return {
+                parent: parentId,
+                x: x,
+                y: y,
+                rotation: rotation,
+                direction: { x: directionX, y: directionY },
+                speed: speed
+            };
         }
 
         public function update(): void {

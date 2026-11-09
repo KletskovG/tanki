@@ -10,5 +10,14 @@ package {
             graphics.drawRect(0, 0, bounds.width, bounds.height);
             graphics.endFill();
         }
+
+        public function toState(): Object {
+            return {
+                x: x,
+                y: y,
+                width: width,
+                height: height
+            };
+        }
     }
 }

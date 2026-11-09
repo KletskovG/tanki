@@ -1,10 +1,23 @@
 import { HTTP_ENDPOINT, API_URL } from './const';
+import type { IGameStateMessage, IGameWorldState, TankColor } from './types';
 
 export class TankiAPI {
     public connectGame(id: string): WebSocket {
         const url = new URL(`${API_URL}/game/${encodeURIComponent(id)}`);
         url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
         return new WebSocket(url);
+    }
+
+    public sendGameState(socket: WebSocket, color: TankColor, state: IGameWorldState): void {
+        if (socket.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
+        const message: IGameStateMessage = {
+            type: 'sync',
+            color, state,
+        };
+        socket.send(JSON.stringify(message));
     }
 
     private async request(endpoint: string): Promise<Response> {

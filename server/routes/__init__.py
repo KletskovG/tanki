@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Response, WebSocket, WebSocketDisconnect, status
+from pydantic import TypeAdapter, ValidationError
 from game import Game
 from game.connections import GameConnections
+from game.state import GameStateMessage
 
 router = APIRouter()
 connections = GameConnections()
-
-# TODO: Move handlers into files
+state_message_adapter = TypeAdapter(GameStateMessage)
 
 @router.get('/clear')
 async def clear():
@@ -25,7 +26,6 @@ def new():
         content=game,
     )
 
-
 @router.websocket('/game/{game_id}')
 async def connect_game(socket: WebSocket, game_id: str):
     if not await connections.connect(game_id, socket):
@@ -35,6 +35,15 @@ async def connect_game(socket: WebSocket, game_id: str):
             message = await socket.receive()
             if message['type'] == 'websocket.disconnect':
                 break
+            if message['type'] != 'websocket.receive' or message.get('text') is None:
+                continue
+
+            try:
+                state_message = state_message_adapter.validate_json(message['text'], strict=True)
+            except ValidationError:
+                continue
+
+            await connections.store_state(game_id, socket, state_message)
     except WebSocketDisconnect:
         pass
     finally:

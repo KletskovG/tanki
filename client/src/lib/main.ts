@@ -1,6 +1,7 @@
 import { TankiAPI } from './api';
 import { CONTROLS } from './const';
 import { Lobby } from './lobby';
+import type { IPresenceMessage } from './types';
 
 export class Tanki {
 
@@ -12,6 +13,7 @@ export class Tanki {
     private loaded = false;
     private ended = false;
     private paired = false;
+    private assignment: IPresenceMessage | null = null;
     private bootstrapReady = false;
     private started = false;
     private generation = 0;
@@ -58,7 +60,7 @@ export class Tanki {
     }
 
     private startIfReady() {
-        if (!this.loaded || !this.paired || this.ended) {
+        if (!this.loaded || !this.paired || this.ended || !this.assignment) {
             return;
         }
 
@@ -69,12 +71,17 @@ export class Tanki {
         }
 
         if (!this.started) {
-            this.runtime?.callExternalInterface('startGame');
+            this.runtime?.callExternalInterface(
+                'startGame',
+                this.assignment.color,
+                this.assignment.tanks.green,
+                this.assignment.tanks.red,
+            );
             this.started = true;
         }
 
         this.ready = true;
-        this.statusElement.textContent = 'Two players connected. Game started.';
+        this.statusElement.textContent = `Two players connected. Game started. You control the ${this.assignment.color} tank.`;
     }
 
     private preload(token: number, swf: Promise<ArrayBuffer>) {
@@ -132,6 +139,7 @@ export class Tanki {
         this.generation += 1;
         this.selectedId = id;
         this.paired = false;
+        this.assignment = null;
         this.pauseGame();
         const previous = this.socket;
         this.socket = null;
@@ -156,23 +164,12 @@ export class Tanki {
             } catch {
                 return;
             }
-            // TODO: Add typechecking here
-            if (
-                !message
-                || typeof message !== 'object'
-                || !('type' in message)
-                || message.type !== 'presence'
-                || !('players' in message)
-                || (message.players !== 1
-                && message.players !== 2)
-            ) {
-                return;
-            }
 
-            this.paired = message.players === 2;
+            this.assignment = message as IPresenceMessage;
+            this.paired = this.assignment.players === 2;
             if (!this.paired) {
                 this.pauseGame();
-                this.statusElement.textContent = 'Waiting for another player (1/2)…';
+                this.statusElement.textContent = `Waiting for another player (1/2)… You control the ${this.assignment.color} tank.`;
             } else if (this.ended) {
                 this.statusElement.textContent = 'Game over — a tank was hit.';
             } else {
@@ -187,6 +184,7 @@ export class Tanki {
             }
 
             this.paired = false;
+            this.assignment = null;
             this.pauseGame();
             this.statusElement.textContent = 'Unable to connect to the game server.';
         });
@@ -198,6 +196,7 @@ export class Tanki {
 
             this.socket = null;
             this.paired = false;
+            this.assignment = null;
             this.pauseGame();
             this.statusElement.textContent = event.reason || 'Disconnected. Select the game again to reconnect.';
         });
@@ -256,6 +255,13 @@ export class Tanki {
             this.ready = false;
             this.held.clear();
             this.statusElement.textContent = 'Game over';
+        };
+        window.onTankiSync = (state) => {
+            if (!this.ready || !this.socket || !this.assignment) {
+                return;
+            }
+
+            this.api.sendGameState(this.socket, this.assignment.color, state);
         };
 
         this.player.addEventListener('loadedmetadata', () => {
