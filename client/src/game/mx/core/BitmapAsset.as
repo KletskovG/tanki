@@ -1,6 +1,8 @@
-package mx.core {
-    import flash.display.Bitmap;
+package mx.core
+{
+	import flash.display.Bitmap;
 
-    public class BitmapAsset extends Bitmap {
-    }
+	public class BitmapAsset extends Bitmap
+	{
+	}
 }
