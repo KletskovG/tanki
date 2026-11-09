@@ -3,19 +3,21 @@ package {
     import flash.display.Sprite;
 
     public class ProjectileSprite extends Sprite {
+        public var id: String;
         public var parentId: String;
 
         [Embed(source="../assets/rocket.png")]
         private static const RocketImage: Class;
 
         private var _owner: TankSprite;
-        private var _directionX: int;
-        private var _directionY: int;
-        public const speed: int = 8;
+        private var _directionX: Number;
+        private var _directionY: Number;
+        public var speed: Number = 8;
 
-        public function ProjectileSprite(owner: TankSprite, directionX: int, directionY: int) {
-            var length: int = Math.sqrt(directionX * directionX + directionY * directionY);
+        public function ProjectileSprite(projectileId: String, owner: TankSprite, directionX: Number, directionY: Number) {
+            var length: Number = Math.sqrt(directionX * directionX + directionY * directionY);
 
+            id = projectileId;
             _owner = owner;
             parentId = owner.id;
             _directionX = directionX / length;
@@ -33,16 +35,17 @@ package {
             return _owner;
         }
 
-        public function get directionX(): int {
+        public function get directionX(): Number {
             return _directionX;
         }
 
-        public function get directionY(): int {
+        public function get directionY(): Number {
             return _directionY;
         }
 
         public function toState(): Object {
             return {
+                id: id,
                 parent: parentId,
                 x: x,
                 y: y,
@@ -50,6 +53,15 @@ package {
                 direction: { x: directionX, y: directionY },
                 speed: speed
             };
+        }
+
+        public function applyState(state: Object): void {
+            x = state.x;
+            y = state.y;
+            rotation = state.rotation;
+            _directionX = state.direction.x;
+            _directionY = state.direction.y;
+            speed = state.speed;
         }
 
         public function update(): void {

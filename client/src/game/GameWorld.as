@@ -8,6 +8,8 @@ package {
         public var bounds: Rectangle;
         private var stopped: Boolean = false;
         private var playerTank: TankSprite;
+        private var projectileSequence: uint = 0;
+        private var projectilesById: Object = {};
 
         public function GameWorld(width: Number, height: Number, color: String, greenTankId: String, redTankId: String) {
             bounds = new Rectangle(0, 0, width, height);
@@ -34,6 +36,71 @@ package {
 
         public function stop(): void {
             stopped = true;
+        }
+
+        private function findTank(id: String): TankSprite {
+            for each (var tank: TankSprite in tanks) {
+                if (tank.id == id) {
+                    return tank;
+                }
+            }
+            return null;
+        }
+
+        private function removeProjectile(index: int): void {
+            var projectile: ProjectileSprite = projectiles[index];
+            if (projectile.parent != null) {
+                projectile.parent.removeChild(projectile);
+            }
+            delete projectilesById[projectile.id];
+            projectiles.splice(index, 1);
+        }
+
+        public function applyState(state: Object): void {
+            if (stopped) {
+                return;
+            }
+
+            for each (var tankState: Object in state.tanks) {
+                var tank: TankSprite = findTank(tankState.id);
+                if (tank != null && tank != playerTank) {
+                    tank.x = tankState.x;
+                    tank.y = tankState.y;
+                    tank.rotation = tankState.rotation;
+                }
+            }
+
+            var remoteIds: Object = {};
+            for each (var projectileState: Object in state.projectiles) {
+                if (projectileState.parent == playerTank.id) {
+                    continue;
+                }
+                var owner: TankSprite = findTank(projectileState.parent);
+                if (owner == null) {
+                    continue;
+                }
+
+                var projectile: ProjectileSprite = projectilesById[projectileState.id] as ProjectileSprite;
+                if (projectile == null) {
+                    projectile = new ProjectileSprite(projectileState.id, owner, projectileState.direction.x, projectileState.direction.y);
+                    playerTank.parent.addChild(projectile);
+                    projectiles.push(projectile);
+                    projectilesById[projectile.id] = projectile;
+                }
+                projectile.applyState(projectileState);
+                remoteIds[projectile.id] = true;
+            }
+
+            for (var i: int = projectiles.length - 1; i >= 0; i--) {
+                projectile = projectiles[i];
+                if (projectile.parentId != playerTank.id && !remoteIds[projectile.id]) {
+                    removeProjectile(i);
+                }
+            }
+
+            if (state.stopped) {
+                stop();
+            }
         }
 
         public function toState(): Object {
@@ -72,13 +139,16 @@ package {
 
             // TODO: Compute angle in one func
             var angle: Number = (tank.rotation + 90) * Math.PI / 180;
-            var projectile: ProjectileSprite = new ProjectileSprite(tank, Math.cos(angle), Math.sin(angle));
+            projectileSequence += 1;
+            var projectileId: String = tank.id + "-" + new Date().time.toString(16) + "-" + projectileSequence;
+            var projectile: ProjectileSprite = new ProjectileSprite(projectileId, tank, Math.cos(angle), Math.sin(angle));
             var muzzleOffset: Number = Math.max(tank.width, tank.height) / 2 + projectile.getBounds(projectile).height / 2 + 1;
 
             projectile.x = tank.x + projectile.directionX * muzzleOffset;
             projectile.y = tank.y + projectile.directionY * muzzleOffset;
             tank.parent.addChild(projectile);
             projectiles.push(projectile);
+            projectilesById[projectile.id] = projectile;
             return projectile;
         }
 
@@ -87,8 +157,11 @@ package {
                 return;
             }
 
-            for (var i: int = 0; i <= projectiles.length - 1; i++) {
+            for (var i: int = projectiles.length - 1; i >= 0; i--) {
                 var projectile: ProjectileSprite = projectiles[i];
+                if (projectile.parentId != playerTank.id) {
+                    continue;
+                }
                 projectile.update();
                 var projectileBounds: Rectangle = projectile.getBounds(projectile.parent);
                 var remove: Boolean = !bounds.containsRect(projectileBounds);
@@ -101,8 +174,7 @@ package {
                 }
 
                 if (remove) {
-                    projectile.parent.removeChild(projectile);
-                    projectiles.splice(i, 1);
+                    removeProjectile(i);
                 }
             }
         }

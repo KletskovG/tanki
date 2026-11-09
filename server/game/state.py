@@ -21,6 +21,7 @@ class TankState(VectorState):
 
 @dataclass
 class ProjectileState(VectorState):
+    id: str
     parent: str
     rotation: float
     direction: VectorState

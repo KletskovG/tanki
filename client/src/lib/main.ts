@@ -166,7 +166,9 @@ export class Tanki {
             }
 
             if (message.type === 'state') {
-                console.log('Server game state:', message.state);
+                if (this.started && !this.ended) {
+                    this.runtime?.callExternalInterface('applyState', message.state);
+                }
                 return;
             }
 

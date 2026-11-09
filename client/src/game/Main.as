@@ -7,11 +7,13 @@ package {
     public class Main extends Sprite {
         private var keys: Object = {};
         private var world: GameWorld;
+        private var finished: Boolean = false;
 
         public function Main() {
             if (ExternalInterface.available) {
                 ExternalInterface.addCallback("setKeyState", setKeyState);
                 ExternalInterface.addCallback("startGame", startGame);
+                ExternalInterface.addCallback("applyState", applyState);
                 ExternalInterface.call("onTankiReady");
             }
         }
@@ -38,24 +40,53 @@ package {
             keys[code] = pressed;
         }
 
+        private function applyState(state: Object): void {
+            if (world == null || finished) {
+                return;
+            }
+            world.applyState(state);
+            if (world.isStopped) {
+                finishGame(false);
+            }
+        }
+
+        private function finishGame(notifyServer: Boolean): void {
+            if (finished) {
+                return;
+            }
+            finished = true;
+            removeEventListener(Event.ENTER_FRAME, update);
+            keys = {};
+            trace("Game over: a tank was hit.");
+
+            if (ExternalInterface.available) {
+                if (notifyServer) {
+                    ExternalInterface.call("onTankiSync", world.toState());
+                }
+                ExternalInterface.call("onTankiGameOver");
+            }
+        }
+
         private function update(event: Event): void {
+            if (finished) {
+                return;
+            }
             world.update();
             
             for each (var tank: TankSprite in world.tanks) {
                 tank.handleUpdate(event, tank == world.controlledTank ? keys : {}, world);
                 if (world.isStopped) {
-                    removeEventListener(Event.ENTER_FRAME, update);
-                    keys = {};
-                    trace("Game over: a tank was hit.");
                     break;
                 }
             }
 
+            if (world.isStopped) {
+                finishGame(true);
+                return;
+            }
+
             if (ExternalInterface.available) {
                 ExternalInterface.call("onTankiSync", world.toState());
-                if (world.isStopped) {
-                    ExternalInterface.call("onTankiGameOver");
-                }
             }
         }
     }

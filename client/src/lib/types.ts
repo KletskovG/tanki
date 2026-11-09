@@ -24,6 +24,7 @@ export interface ITankState extends IVectorState {
 }
 
 export interface IProjectileState extends IVectorState {
+    id: string;
     parent: string;
     rotation: number;
     direction: IVectorState;
