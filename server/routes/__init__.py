@@ -1,8 +1,10 @@
+from dataclasses import asdict
+
 from fastapi import APIRouter, Response, WebSocket, WebSocketDisconnect, status
 from pydantic import TypeAdapter, ValidationError
 from game import Game
 from game.connections import GameConnections
-from game.state import GameStateMessage
+from game.state import GameStateMessage, ServerStateMessage
 
 router = APIRouter()
 connections = GameConnections()
@@ -43,8 +45,10 @@ async def connect_game(socket: WebSocket, game_id: str):
             except ValidationError:
                 continue
 
-            await connections.store_state(game_id, socket, state_message)
-    except WebSocketDisconnect:
+            server_state = await connections.store_state(game_id, socket, state_message)
+            if server_state is not None:
+                await socket.send_json(asdict(ServerStateMessage(type="state", state=server_state)))
+    except (WebSocketDisconnect, RuntimeError, OSError):
         pass
     finally:
         await connections.disconnect(game_id, socket)

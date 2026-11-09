@@ -40,3 +40,9 @@ class GameStateMessage:
     type: Literal["sync"]
     color: TankColor
     state: GameWorldState
+
+
+@dataclass
+class ServerStateMessage:
+    type: Literal["state"]
+    state: GameWorldState

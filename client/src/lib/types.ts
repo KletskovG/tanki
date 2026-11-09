@@ -43,3 +43,10 @@ export interface IGameStateMessage {
     color: TankColor;
     state: IGameWorldState;
 }
+
+export interface IServerStateMessage {
+    type: 'state';
+    state: IGameWorldState;
+}
+
+export type ServerMessage = IPresenceMessage | IServerStateMessage;

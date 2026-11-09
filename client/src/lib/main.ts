@@ -1,7 +1,7 @@
 import { TankiAPI } from './api';
 import { CONTROLS } from './const';
 import { Lobby } from './lobby';
-import type { IPresenceMessage } from './types';
+import type { IPresenceMessage, ServerMessage } from './types';
 
 export class Tanki {
 
@@ -158,14 +158,19 @@ export class Tanki {
             if (this.socket !== connection) {
                 return;
             }
-            let message: unknown;
+            let message: ServerMessage;
             try {
-                message = JSON.parse(event.data);
+                message = JSON.parse(event.data) as ServerMessage;
             } catch {
                 return;
             }
 
-            this.assignment = message as IPresenceMessage;
+            if (message.type === 'state') {
+                console.log('Server game state:', message.state);
+                return;
+            }
+
+            this.assignment = message;
             this.paired = this.assignment.players === 2;
             if (!this.paired) {
                 this.pauseGame();

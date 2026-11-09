@@ -1,9 +1,10 @@
 import asyncio
+from typing import Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 
 from game import Game
-from game.state import GameStateMessage
+from game.state import GameStateMessage, GameWorldState
 
 
 class GameConnections:
@@ -42,12 +43,14 @@ class GameConnections:
             peers.pop(socket, None)
             await self.notify(game_id)
 
-    async def store_state(self, game_id: str, socket: WebSocket, message: GameStateMessage) -> None:
+    async def store_state(self, game_id: str, socket: WebSocket, message: GameStateMessage) -> Optional[GameWorldState]:
         async with self.lock:
             game = Game.game_storage.get(game_id)
             color = self.rooms.get(game_id, {}).get(socket)
             if game is not None and color == message.color:
                 game.player_states[message.color] = message.state
+                return game.merge_states()
+            return None
 
     async def notify(self, game_id: str) -> None:
         peers = self.rooms.get(game_id, {})
