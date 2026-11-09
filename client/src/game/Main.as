@@ -8,7 +8,7 @@ package {
         private var tankGreen: TankSprite;
         private var tankRed: TankSprite;
         private var keys: Object = {};
-        private var world:GameWorld;
+        private var world: GameWorld;
 
         public function Main() {
             if (ExternalInterface.available) {

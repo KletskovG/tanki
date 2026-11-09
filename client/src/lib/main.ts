@@ -1,6 +1,6 @@
-import { TankiAPI } from "./api";
-import { CONTROLS } from "./const";
-import { Lobby } from "./lobby";
+import { TankiAPI } from './api';
+import { CONTROLS } from './const';
+import { Lobby } from './lobby';
 
 export class Tanki {
 
@@ -18,19 +18,19 @@ export class Tanki {
     private selectedId: string | null = null;
     private socket: WebSocket | null = null;
     private preloadQueue: Promise<void> = Promise.resolve();
-    
+
     private get gameContainer() {
-        const element = document.querySelector<HTMLDivElement>("#game");
+        const element = document.querySelector<HTMLDivElement>('#game');
 
         if (!element) {
-            throw new Error('No game container element')
+            throw new Error('No game container element');
         }
 
         return element;
     }
 
     private get statusElement() {
-        const element = document.querySelector<HTMLParagraphElement>("#status");
+        const element = document.querySelector<HTMLParagraphElement>('#status');
 
         if (!element) {
             throw new Error('No status element');
@@ -45,7 +45,7 @@ export class Tanki {
 
     private releaseKeys() {
         for (const code of this.held) {
-            this.runtime?.callExternalInterface("setKeyState", code, false);
+            this.runtime?.callExternalInterface('setKeyState', code, false);
         }
         this.held.clear();
     }
@@ -69,12 +69,12 @@ export class Tanki {
         }
 
         if (!this.started) {
-            this.runtime?.callExternalInterface("startGame");
+            this.runtime?.callExternalInterface('startGame');
             this.started = true;
         }
 
         this.ready = true;
-        this.statusElement.textContent = "Two players connected. Game started.";
+        this.statusElement.textContent = 'Two players connected. Game started.';
     }
 
     private preload(token: number, swf: Promise<ArrayBuffer>) {
@@ -92,10 +92,10 @@ export class Tanki {
             this.bootstrapReady = false;
             await this.runtime.load({
                 data,
-                swfFileName: "game.swf",
-                autoplay: "off",
-                unmuteOverlay: "hidden",
-                backgroundColor: "#0f172a",
+                swfFileName: 'game.swf',
+                autoplay: 'off',
+                unmuteOverlay: 'hidden',
+                backgroundColor: '#0f172a',
                 allowScriptAccess: true,
             });
 
@@ -103,13 +103,15 @@ export class Tanki {
                 return;
             }
 
-            this.runtime.traceObserver = (message) => console.log(`[AS3] ${message}`);
+            this.runtime.traceObserver = (message) => {
+                console.log(`[AS3] ${message}`);
+            };
             this.loaded = true;
 
             if (this.paired) {
                 this.startIfReady();
             } else if (!this.selectedId) {
-                this.statusElement.textContent = "Select a game or create one to join.";
+                this.statusElement.textContent = 'Select a game or create one to join.';
             }
         }).catch((error: unknown) => {
             if (token !== this.generation) {
@@ -117,8 +119,8 @@ export class Tanki {
             }
             this.loaded = false;
             this.pauseGame();
-            this.statusElement.textContent = "Unable to load the game. Reload the page to try again.";
-            console.error("Game preload failed:", error);
+            this.statusElement.textContent = 'Unable to load the game. Reload the page to try again.';
+            console.error('Game preload failed:', error);
         });
     }
 
@@ -137,14 +139,14 @@ export class Tanki {
         this.preload(this.generation, swf);
 
         if (!id) {
-            this.statusElement.textContent = "Select a game or create one to join.";
+            this.statusElement.textContent = 'Select a game or create one to join.';
             return;
         }
 
-        this.statusElement.textContent = "Connecting to game";
+        this.statusElement.textContent = 'Connecting to game';
         const connection = this.api.connectGame(id);
         this.socket = connection;
-        this.socket.addEventListener("message", (event: MessageEvent<string>) => {
+        this.socket.addEventListener('message', (event: MessageEvent<string>) => {
             if (this.socket !== connection) {
                 return;
             }
@@ -157,10 +159,10 @@ export class Tanki {
             // TODO: Add typechecking here
             if (
                 !message
-                || typeof message !== "object"
-                || !("type" in message)
-                || message.type !== "presence"
-                || !("players" in message)
+                || typeof message !== 'object'
+                || !('type' in message)
+                || message.type !== 'presence'
+                || !('players' in message)
                 || (message.players !== 1
                 && message.players !== 2)
             ) {
@@ -170,26 +172,26 @@ export class Tanki {
             this.paired = message.players === 2;
             if (!this.paired) {
                 this.pauseGame();
-                this.statusElement.textContent = "Waiting for another player (1/2)…";
+                this.statusElement.textContent = 'Waiting for another player (1/2)…';
             } else if (this.ended) {
-                this.statusElement.textContent = "Game over — a tank was hit.";
+                this.statusElement.textContent = 'Game over — a tank was hit.';
             } else {
-                this.statusElement.textContent = "Preparing game for two players…";
+                this.statusElement.textContent = 'Preparing game for two players…';
                 this.startIfReady();
             }
         });
 
-        connection.addEventListener("error", () => {
+        connection.addEventListener('error', () => {
             if (this.socket !== connection) {
                 return;
             }
-            
+
             this.paired = false;
             this.pauseGame();
-            this.statusElement.textContent = "Unable to connect to the game server.";
+            this.statusElement.textContent = 'Unable to connect to the game server.';
         });
-    
-        connection.addEventListener("close", (event) => {
+
+        connection.addEventListener('close', (event) => {
             if (this.socket !== connection) {
                 return;
             }
@@ -197,7 +199,7 @@ export class Tanki {
             this.socket = null;
             this.paired = false;
             this.pauseGame();
-            this.statusElement.textContent = event.reason || "Disconnected. Select the game again to reconnect.";
+            this.statusElement.textContent = event.reason || 'Disconnected. Select the game again to reconnect.';
         });
     }
 
@@ -210,33 +212,33 @@ export class Tanki {
         }
 
         event.preventDefault();
-    
+
         if (this.held.has(event.code) === pressed) {
             return;
         }
 
         if (pressed) {
-            this.held.add(event.code)
+            this.held.add(event.code);
         } else {
             this.held.delete(event.code);
         }
 
-        this.runtime?.callExternalInterface("setKeyState", event.code, pressed);
+        this.runtime?.callExternalInterface('setKeyState', event.code, pressed);
     }
 
     public initializePage() {
         if (!this.player) {
-            this.statusElement.textContent = "Ruffle did not load. Reload the page to try again.";
+            this.statusElement.textContent = 'Ruffle did not load. Reload the page to try again.';
             const lobby = new Lobby(this.api, () => {
-                this.statusElement.textContent = "Ruffle did not load. Reload the page to try again.";
+                this.statusElement.textContent = 'Ruffle did not load. Reload the page to try again.';
             });
             lobby.initializePage();
             return;
         }
-        
+
         this.gameContainer.replaceChildren(this.player);
 
-        const swf = fetch(new URL("/game.swf", document.baseURI)).then((response) => {
+        const swf = fetch(new URL('/game.swf', document.baseURI)).then((response) => {
             if (!response.ok) {
                 throw new Error(`SWF download failed (${response.status}).`);
             }
@@ -245,43 +247,55 @@ export class Tanki {
 
         window.onTankiReady = () => {
             this.bootstrapReady = true;
-            queueMicrotask(() => this.startIfReady());
-        }
+            queueMicrotask(() => {
+                this.startIfReady();
+            });
+        };
         window.onTankiGameOver = () => {
             this.ended = true;
             this.ready = false;
             this.held.clear();
-            this.statusElement.textContent = "Game over";
-        }
+            this.statusElement.textContent = 'Game over';
+        };
 
-        this.player.addEventListener("loadedmetadata", () => {
+        this.player.addEventListener('loadedmetadata', () => {
             const metadata = this.runtime?.metadata;
 
-            if (metadata && metadata.width > 0 && metadata.height > 0 && this.gameContainer) {
-            this.gameContainer.style.aspectRatio = `${metadata.width} / ${metadata.height}`;
+            if (metadata && metadata.width > 0 && metadata.height > 0) {
+                this.gameContainer.style.aspectRatio = `${metadata.width} / ${metadata.height}`;
             }
         });
 
         this.player.tabIndex = 0;
-        this.player.addEventListener("pointerdown", () => this.player?.focus());
+        this.player.addEventListener('pointerdown', () => this.player?.focus());
 
-        window.addEventListener("keydown", (event) => this.handleKey(event, true), true);
-        window.addEventListener("keyup", (event) => this.handleKey(event, false), true);
-        this.player.addEventListener("focusout", () => this.releaseKeys());
-        window.addEventListener("blur", () => this.releaseKeys());
-        document.addEventListener("visibilitychange", () => {
+        window.addEventListener('keydown', (event) => {
+            this.handleKey(event, true);
+        }, true);
+        window.addEventListener('keyup', (event) => {
+            this.handleKey(event, false);
+        }, true);
+        this.player.addEventListener('focusout', () => {
+            this.releaseKeys();
+        });
+        window.addEventListener('blur', () => {
+            this.releaseKeys();
+        });
+        document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 this.releaseKeys();
             }
         });
 
-        window.addEventListener("pagehide", () => {
+        window.addEventListener('pagehide', () => {
             const previous = this.socket;
             this.socket = null;
             previous?.close();
         });
 
-        const lobby = new Lobby(this.api, (id) => this.selectGame(id, swf));
+        const lobby = new Lobby(this.api, (id) => {
+            this.selectGame(id, swf);
+        });
         lobby.initializePage();
     }
 }

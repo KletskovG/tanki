@@ -7,6 +7,8 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "npm run lint -- --fix",
     "dev": "npm run build && vite preview",
     "typechecking": "tsc --noEmit",
     "setup:as3": "node tools/setup-as3.mjs",
@@ -18,10 +20,18 @@
   "dependencies": {
     "@ruffle-rs/ruffle": "0.7.1"
   },
+  "overrides": {
+    "minimatch": "11.0.5"
+  },
   "devDependencies": {
     "@apache-royale/royale-js": "0.9.12",
-    "@types/node": "24.0.0",
-    "typescript": "7.0.2",
+    "@eslint/js": "10.0.1",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "@types/node": "24.19.2",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
     "vite": "8.3.6"
   }
 }
